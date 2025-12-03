@@ -12,7 +12,7 @@ A lightweight logging utility for debugging.
 ## Installation
 
 ```bash
-pip install pwnlogger
+pip install git+https://github.com/Eudaeon/pwnlogger.git
 ```
 
 ## Usage

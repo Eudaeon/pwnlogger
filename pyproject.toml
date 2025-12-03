@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pwnlogger"
+version = "0.1.0"
+description = "A lightweight logging utility for debugging"
+readme = "README.md"
+requires-python = ">=3.6"
+license = {text = "MIT"}
+authors = [
+    {name = "Eudaeon"}
+]
+keywords = ["logging", "debug"]
+
+[project.urls]
+Homepage = "https://github.com/Eudaeon/pwnlogger"
+"Bug Reports" = "https://github.com/Eudaeon/pwnlogger/issues"
+Source = "https://github.com/Eudaeon/pwnlogger"

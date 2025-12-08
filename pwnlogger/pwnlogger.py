@@ -137,6 +137,14 @@ class _PwnLogger:
         def debug(self, message):
             self._sub_print(self.logger.LogLevel.DEBUG, message)
 
+        def raw(self, message):
+            if self.visible:
+                with self.lock:
+                    sys.stdout.write("\r\033[K")
+                    sys.stdout.write(f"{message}\n")
+                    sys.stdout.flush()
+                    self._draw()
+
         def status(self, message):
             if self.visible:
                 with self.lock:

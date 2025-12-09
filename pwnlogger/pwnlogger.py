@@ -141,7 +141,7 @@ class _PwnLogger:
             if self.visible:
                 with self.lock:
                     sys.stdout.write("\r\033[K")
-                    sys.stdout.write(f"{message}\n")
+                    sys.stdout.write(f"    {message}\n")
                     sys.stdout.flush()
                     self._draw()
 

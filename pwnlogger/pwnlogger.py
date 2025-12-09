@@ -49,9 +49,12 @@ class _PwnLogger:
 
     def _format_line(self, level, message, indent=""):
         symbol, color = self.STYLES.get(level, ("?", self.Colors.RESET))
-        return (
-            f"{indent}{self.Colors.BOLD}{color}[{symbol}]{self.Colors.RESET} {message}"
-        )
+        lines = message.split("\n")
+        formatted_lines = [
+            f"{indent}{self.Colors.BOLD}{color}[{symbol}]{self.Colors.RESET} {lines[0]}"
+        ]
+        formatted_lines.extend(f"{indent}{line}" for line in lines[1:])
+        return "\n".join(formatted_lines)
 
     def _print(self, level, message):
         if self._should_log(level):
@@ -141,7 +144,10 @@ class _PwnLogger:
             if self.visible:
                 with self.lock:
                     sys.stdout.write("\r\033[K")
-                    sys.stdout.write(f"    {message}\n")
+                    indented_message = "\n".join(
+                        f"    {line}" for line in message.split("\n")
+                    )
+                    sys.stdout.write(f"{indented_message}\n")
                     sys.stdout.flush()
                     self._draw()
 

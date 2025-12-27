@@ -1,188 +1,231 @@
 import sys
-import time
-import threading
-import itertools
 from enum import IntEnum
+from typing import Optional
+
+from rich.console import Console
+from rich.theme import Theme
+from rich.progress import (
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    BarColumn,
+    TaskProgressColumn,
+    TimeRemainingColumn,
+)
+
+
+class LogLevel(IntEnum):
+    """Available logging levels for pwnlogger."""
+
+    DEBUG = 10
+    INFO = 20
+    ERROR = 30
+    SUCCESS = 40
 
 
 class _PwnLogger:
-    class Colors:
-        RESET = "\033[0m"
-        BOLD = "\033[1m"
-        RED = "\033[91m"
-        GREEN = "\033[92m"
-        YELLOW = "\033[93m"
-        BLUE = "\033[94m"
-        PURPLE = "\033[95m"
-        CYAN = "\033[96m"
-        GRAY = "\033[90m"
-
-    class LogLevel(IntEnum):
-        DEBUG = 10
-        INFO = 20
-        ERROR = 30
-        SUCCESS = 40
+    """Core logger class providing styled output and progress tracking."""
 
     STYLES = {
-        LogLevel.SUCCESS: ("✔", Colors.GREEN),
-        LogLevel.ERROR: ("✖", Colors.RED),
-        LogLevel.INFO: ("i", Colors.BLUE),
-        LogLevel.DEBUG: ("d", Colors.GRAY),
+        LogLevel.SUCCESS: "bold green",
+        LogLevel.ERROR: "bold red",
+        LogLevel.INFO: "bold blue",
+        LogLevel.DEBUG: "dim",
     }
 
-    def __init__(self, level="debug"):
-        self.min_level = self._normalize_level(level)
+    def __init__(self, level: LogLevel = LogLevel.DEBUG):
+        self.console = Console(highlight=False)
+        self.min_level = level
 
-    def _normalize_level(self, level):
-        if isinstance(level, self.LogLevel):
-            return level
-        try:
-            return self.LogLevel[level.upper()]
-        except (KeyError, AttributeError):
-            return self.LogLevel.INFO
+    def set_level(self, level: LogLevel) -> None:
+        """Sets the minimum threshold for displayed logs."""
+        if not isinstance(level, LogLevel):
+            raise TypeError(
+                f"Level must be a LogLevel enum, not {type(level).__name__}"
+            )
+        self.min_level = level
 
-    def set_level(self, level):
-        self.min_level = self._normalize_level(level)
-
-    def _should_log(self, level):
+    def _should_log(self, level: LogLevel) -> bool:
         return level >= self.min_level
 
-    def _format_line(self, level, message, indent=""):
-        symbol, color = self.STYLES.get(level, ("?", self.Colors.RESET))
-        lines = message.split("\n")
-        formatted_lines = [
-            f"{indent}{self.Colors.BOLD}{color}[{symbol}]{self.Colors.RESET} {lines[0]}"
-        ]
-        formatted_lines.extend(f"{indent}{line}" for line in lines[1:])
-        return "\n".join(formatted_lines)
-
-    def _print(self, level, message):
+    def _print(self, level: LogLevel, message: str) -> None:
         if self._should_log(level):
-            sys.stdout.write(self._format_line(level, message) + "\n")
-            sys.stdout.flush()
+            style = self.STYLES.get(level, "")
+            self.console.print(message, style=style)
 
-    def success(self, message):
-        self._print(self.LogLevel.SUCCESS, message)
+    def success(self, message: str) -> None:
+        self._print(LogLevel.SUCCESS, message)
 
-    def info(self, message):
-        self._print(self.LogLevel.INFO, message)
+    def info(self, message: str) -> None:
+        self._print(LogLevel.INFO, message)
 
-    def debug(self, message):
-        self._print(self.LogLevel.DEBUG, message)
+    def debug(self, message: str) -> None:
+        self._print(LogLevel.DEBUG, message)
 
-    def error(self, message):
-        self._print(self.LogLevel.ERROR, message)
+    def error(self, message: str) -> None:
+        self._print(LogLevel.ERROR, message)
 
-    def raw(self, message):
-        sys.stdout.write(message + "\n")
-        sys.stdout.flush()
+    def raw(self, message: str) -> None:
+        self.console.print(message)
 
-    def progress(self, message, level="info"):
-        enum_level = self._normalize_level(level)
-        return self._Progress(self, message, enum_level)
+    def status(self, message: str, level: LogLevel = LogLevel.INFO):
+        """Context manager for an animated spinner."""
+        return self._Status(self, message, level)
 
-    class _Progress:
-        def __init__(self, logger, message, level):
+    def progress(self, message: str, total: int = 100, level: LogLevel = LogLevel.INFO):
+        """Context manager for a single-task progress bar."""
+        return self._Progress(self, message, total, level)
+
+    class _Status:
+        """Handles single-line animated indicators."""
+
+        def __init__(self, logger: "_PwnLogger", message: str, level: LogLevel):
             self.logger = logger
             self.message = message
             self.level = level
-            _, self.anim_color = self.logger.STYLES.get(
-                self.level, ("*", self.logger.Colors.BLUE)
-            )
-            self.spinner = itertools.cycle(
-                ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-            )
             self.visible = self.logger._should_log(self.level)
-            self.stop_event = threading.Event()
-            self.lock = threading.Lock()
 
-            if self.visible:
-                sys.stdout.write(
-                    f"\r{self.anim_color}[{next(self.spinner)}]{self.logger.Colors.RESET} {self.message}\033[K"
-                )
-                sys.stdout.flush()
-                self.thread = threading.Thread(target=self._animate, daemon=True)
-                self.thread.start()
-
-        def _draw(self):
-            sys.stdout.write(
-                f"\r{self.anim_color}[{next(self.spinner)}]{self.logger.Colors.RESET} {self.message}\033[K"
+            style = self.logger.STYLES.get(self.level, "bold blue")
+            self.progress_display = Progress(
+                SpinnerColumn(style=style),
+                TextColumn(f"[{style}]{{task.description}}"),
+                console=self.logger.console,
+                transient=True,
             )
-            sys.stdout.flush()
-
-        def _animate(self):
-            while not self.stop_event.is_set():
-                with self.lock:
-                    self._draw()
-                time.sleep(0.1)
-
-        def _sub_print(self, level, message):
-            if self.logger._should_log(level):
-                with self.lock:
-                    if self.visible:
-                        sys.stdout.write("\r\033[K")
-
-                    line = self.logger._format_line(level, message, indent="    ")
-                    sys.stdout.write(f"{line}\n")
-
-                    if self.visible:
-                        self._draw()
-
-        def info(self, message):
-            self._sub_print(self.logger.LogLevel.INFO, message)
-
-        def success(self, message):
-            self._sub_print(self.logger.LogLevel.SUCCESS, message)
-
-        def error(self, message):
-            self._sub_print(self.logger.LogLevel.ERROR, message)
-
-        def debug(self, message):
-            self._sub_print(self.logger.LogLevel.DEBUG, message)
-
-        def raw(self, message):
-            if self.visible:
-                with self.lock:
-                    sys.stdout.write("\r\033[K")
-                    indented_message = "\n".join(
-                        f"    {line}" for line in message.split("\n")
-                    )
-                    sys.stdout.write(f"{indented_message}\n")
-                    sys.stdout.flush()
-                    self._draw()
-
-        def status(self, message):
-            if self.visible:
-                with self.lock:
-                    self.message = message
-
-        def finish(self, message, level=None):
-            finish_level = self.logger._normalize_level(level) if level else self.level
-            if self.visible:
-                self.stop_event.set()
-                self.thread.join()
-                symbol, color = self.logger.STYLES.get(finish_level)
-                with self.lock:
-                    sys.stdout.write("\r\033[K")
-                    sys.stdout.write(
-                        f"{self.logger.Colors.BOLD}{color}[{symbol}]{self.logger.Colors.RESET} {message}\n"
-                    )
-                    sys.stdout.flush()
+            self.task_id = None
 
         def __enter__(self):
+            if self.visible:
+                self.progress_display.start()
+                self.task_id = self.progress_display.add_task(self.message)
             return self
 
         def __exit__(self, exc_type, exc_val, exc_tb):
-            if self.visible and not self.stop_event.is_set():
+            if self.visible:
                 if exc_type:
                     if exc_type is KeyboardInterrupt:
-                        self.finish("User aborted execution", level="error")
+                        self.finish("User aborted execution", level=LogLevel.ERROR)
                         sys.exit(1)
                     else:
-                        self.finish("Exception occurred", level="error")
+                        self.finish(f"Exception: {exc_val}", level=LogLevel.ERROR)
                 else:
-                    self.finish("Done", level=self.level)
+                    self.finish(level=self.level)
+
+                if self.progress_display.live.is_started:
+                    self.progress_display.stop()
+
+        def _sub_log(self, level: LogLevel, message: str):
+            if self.logger._should_log(level):
+                style = self.logger.STYLES.get(level, "")
+                self.progress_display.console.print(f"  {message}", style=style)
+
+        def info(self, m):
+            self._sub_log(LogLevel.INFO, m)
+
+        def success(self, m):
+            self._sub_log(LogLevel.SUCCESS, m)
+
+        def error(self, m):
+            self._sub_log(LogLevel.ERROR, m)
+
+        def debug(self, m):
+            self._sub_log(LogLevel.DEBUG, m)
+
+        def update(self, message: str) -> None:
+            """Updates current status text."""
+            if self.visible and self.task_id is not None:
+                self.message = message
+                self.progress_display.update(self.task_id, description=message)
+
+        def finish(
+            self, message: Optional[str] = None, level: Optional[LogLevel] = None
+        ) -> None:
+            """Finishes the status and prints the final message."""
+            if not self.visible or self.task_id is None:
+                return
+
+            f_message = message if message is not None else self.message
+            f_level = level if level else self.level
+            style = self.logger.STYLES.get(f_level, "")
+
+            self.progress_display.stop()
+            self.logger.console.print(f_message, style=style)
+            self.task_id = None
+
+    class _Progress:
+        """Handles persistent progress bars."""
+
+        def __init__(
+            self, logger: "_PwnLogger", message: str, total: int, level: LogLevel
+        ):
+            self.logger = logger
+            self.level = level
+            self.visible = self.logger._should_log(self.level)
+            style = self.logger.STYLES.get(self.level, "bold blue")
+
+            local_theme = Theme(
+                {"progress.remaining": style, "progress.percentage": style}
+            )
+            local_console = Console(
+                theme=local_theme,
+                highlight=False,
+                force_terminal=self.logger.console.is_terminal,
+            )
+
+            self.progress_display = Progress(
+                TextColumn(f"[{style}]{{task.description}}"),
+                BarColumn(complete_style=style, finished_style=style),
+                TaskProgressColumn(),
+                TimeRemainingColumn(),
+                console=local_console,
+                transient=False,
+            )
+
+            self.task_id = (
+                self.progress_display.add_task(message, total=total)
+                if self.visible
+                else None
+            )
+
+        def __enter__(self):
+            if self.visible:
+                self.progress_display.start()
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            if self.visible:
+                self.progress_display.stop()
+
+        def update(
+            self,
+            advance: int = 0,
+            completed: Optional[int] = None,
+            description: Optional[str] = None,
+        ) -> None:
+            if self.visible and self.task_id is not None:
+                self.progress_display.update(
+                    self.task_id,
+                    advance=advance,
+                    completed=completed,
+                    description=description,
+                )
+
+        def _sub_log(self, level: LogLevel, message: str):
+            if self.logger._should_log(level):
+                style = self.logger.STYLES.get(level, "")
+                self.progress_display.console.print(f"  {message}", style=style)
+
+        def info(self, m):
+            self._sub_log(LogLevel.INFO, m)
+
+        def success(self, m):
+            self._sub_log(LogLevel.SUCCESS, m)
+
+        def error(self, m):
+            self._sub_log(LogLevel.ERROR, m)
+
+        def debug(self, m):
+            self._sub_log(LogLevel.DEBUG, m)
 
 
 logger = _PwnLogger()
-LogLevel = _PwnLogger.LogLevel

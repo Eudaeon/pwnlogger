@@ -1,13 +1,6 @@
 # PwnLogger
 
-A lightweight logging utility for debugging.
-
-## Features
-
--   Color-coded output with symbols (`✔`, `✖`, `i`, `d`)
--   Support for success, error, info, and debug log levels
--   Animated progress spinners/bars with nested logging
--   Configurable log levels
+A lightweight logging utility for debugging, built on `rich`.
 
 ## Installation
 
@@ -19,47 +12,59 @@ pip install git+https://github.com/Eudaeon/pwnlogger.git
 
 ### Basic Logging
 
-```python
-from pwnlogger import logger
+Import `logger` and `LogLevel` to set verbosity and print colored lines.
 
-# Log messages
-logger.success("Operation completed")
-logger.error("An error occurred")
-logger.info("Information message")
-logger.debug("Debug information")
+```python
+from pwnlogger import logger, LogLevel
+
+# Set the minimum threshold (default is DEBUG)
+logger.set_level(LogLevel.INFO)
+
+logger.success("Build completed in 4.2s")
+logger.info("Connecting to database...")
+logger.error("Connection failed: timeout")
+logger.debug("Stack trace: ...") # Hidden because min_level is INFO
 ```
 
-### Progress Spinners
+### Status Spinners
 
-You can use the `progress` context manager to display an animated spinner while performing long-running tasks. You can also log messages nested within the progress step.
+Use the `status` manager for tasks where the final duration is unknown. You can update the message and print indented logs within the block.
+
+```python
+import time
+from pwnlogger import logger, LogLevel
+
+with logger.status("Provisioning server...", level=LogLevel.INFO) as s:
+    time.sleep(1)
+    s.info("Instance 'web-01' created.")
+    
+    time.sleep(1)
+    s.update("Configuring firewall rules...")
+    s.info("Port 80/443 opened.")
+    
+    # Finish with a custom status message and log level
+    time.sleep(1)
+    s.finish("Infrastructure ready.", level=LogLevel.SUCCESS)
+```
+
+### Progress Bars
+
+Use `progress` for iterative tasks with a known total. These bars persist on the screen after completion.
 
 ```python
 import time
 from pwnlogger import logger
 
-with logger.progress("Starting long task...") as progress:
-    time.sleep(1)
+files = ["data1.json", "data2.json", "config.yaml", "logs.txt"]
 
-    # Log nested messages without breaking the spinner
-    progress.info("Processing step 1")
-
-    # Update the status text next to the spinner
-    progress.status("Moving to step 2...")
-    time.sleep(1)
-
-    # Finish with a custom success message
-    progress.finish("Task 3 successfully!", level="success")
-```
-
-### Log Levels
-
-You can set the minimum log level to control verbosity. The default level is `debug`.
-
-```python
-from pwnlogger import logger
-
-# Hide debug messages
-logger.set_level("info")
-logger.debug("This will not be printed")
-logger.info("This will be printed")
+with logger.progress("Processing files...", total=len(files)) as p:
+    for filename in files:
+        # Update progress and description
+        p.update(advance=1, description=f"Processing {filename}")
+        
+        # Log events without breaking the bar
+        if filename.endswith(".yaml"):
+            p.debug(f"Parsing YAML headers for {filename}")
+            
+        time.sleep(0.5)
 ```

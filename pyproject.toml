@@ -7,7 +7,10 @@ name = "pwnlogger"
 version = "0.1.0"
 description = "A lightweight logging utility for debugging"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.8.0"
+dependencies = [
+    "rich>=14.2.0",
+]
 license = {text = "MIT"}
 authors = [
     {name = "Eudaeon"}

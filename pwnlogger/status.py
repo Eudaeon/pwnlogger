@@ -1,10 +1,11 @@
-import sys
 from typing import Optional
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from .enums import LogLevel
 
+
 class _Status:
     """Handles single-line animated indicators."""
+
     def __init__(self, logger, message: str, level: LogLevel):
         self.logger = logger
         self.message = message
@@ -27,35 +28,48 @@ class _Status:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.visible:
-            if exc_type:
-                if exc_type is KeyboardInterrupt:
-                    self.finish("User aborted execution", level=LogLevel.ERROR)
-                    sys.exit(1)
-                else:
-                    self.finish(f"Exception: {exc_val}", level=LogLevel.ERROR)
+        if not self.visible:
+            return None
+
+        try:
+            if exc_type is KeyboardInterrupt:
+                self.finish("Execution aborted by user", level=LogLevel.ERROR)
+                return True
+            elif exc_type is not None:
+                self.finish(exc_val, level=LogLevel.ERROR)
+                return True
             else:
                 self.finish(level=self.level)
-
+        finally:
             if self.progress_display.live.is_started:
                 self.progress_display.stop()
+        return None
 
     def _sub_log(self, level: LogLevel, message: str):
         if self.logger._should_log(level):
             style = self.logger.STYLES.get(level, "")
             self.progress_display.console.print(f"  {message}", style=style)
 
-    def info(self, m): self._sub_log(LogLevel.INFO, m)
-    def success(self, m): self._sub_log(LogLevel.SUCCESS, m)
-    def error(self, m): self._sub_log(LogLevel.ERROR, m)
-    def debug(self, m): self._sub_log(LogLevel.DEBUG, m)
+    def info(self, m):
+        self._sub_log(LogLevel.INFO, m)
+
+    def success(self, m):
+        self._sub_log(LogLevel.SUCCESS, m)
+
+    def error(self, m):
+        self._sub_log(LogLevel.ERROR, m)
+
+    def debug(self, m):
+        self._sub_log(LogLevel.DEBUG, m)
 
     def update(self, message: str) -> None:
         if self.visible and self.task_id is not None:
             self.message = message
             self.progress_display.update(self.task_id, description=message)
 
-    def finish(self, message: Optional[str] = None, level: Optional[LogLevel] = None) -> None:
+    def finish(
+        self, message: Optional[str] = None, level: Optional[LogLevel] = None
+    ) -> None:
         if not self.visible or self.task_id is None:
             return
         f_message = message if message is not None else self.message

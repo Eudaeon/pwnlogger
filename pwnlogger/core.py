@@ -3,8 +3,10 @@ from .enums import LogLevel
 from .status import _Status
 from .progress import _Progress
 
+
 class _PwnLogger:
     """Core logger class providing styled output and progress tracking."""
+
     STYLES = {
         LogLevel.SUCCESS: "bold green",
         LogLevel.ERROR: "bold red",
@@ -18,7 +20,9 @@ class _PwnLogger:
 
     def set_level(self, level: LogLevel) -> None:
         if not isinstance(level, LogLevel):
-            raise TypeError(f"Level must be a LogLevel enum, not {type(level).__name__}")
+            raise TypeError(
+                f"Level must be a LogLevel enum, not {type(level).__name__}"
+            )
         self.min_level = level
 
     def _should_log(self, level: LogLevel) -> bool:
@@ -29,11 +33,20 @@ class _PwnLogger:
             style = self.STYLES.get(level, "")
             self.console.print(message, style=style)
 
-    def success(self, message: str) -> None: self._print(LogLevel.SUCCESS, message)
-    def info(self, message: str) -> None: self._print(LogLevel.INFO, message)
-    def debug(self, message: str) -> None: self._print(LogLevel.DEBUG, message)
-    def error(self, message: str) -> None: self._print(LogLevel.ERROR, message)
-    def raw(self, message: str) -> None: self.console.print(message)
+    def success(self, message: str) -> None:
+        self._print(LogLevel.SUCCESS, message)
+
+    def info(self, message: str) -> None:
+        self._print(LogLevel.INFO, message)
+
+    def debug(self, message: str) -> None:
+        self._print(LogLevel.DEBUG, message)
+
+    def error(self, message: str) -> None:
+        self._print(LogLevel.ERROR, message)
+
+    def raw(self, message: str) -> None:
+        self.console.print(message)
 
     def status(self, message: str, level: LogLevel = LogLevel.INFO):
         return _Status(self, message, level)

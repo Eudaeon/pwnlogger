@@ -2,10 +2,10 @@
 
 <div align="center">
 
-[![GitHub stars](https://img.shields.io/github/stars/Eudaeon/connection-mapper?style=for-the-badge)](https://github.com/Eudaeon/connection-mapper/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Eudaeon/connection-mapper?style=for-the-badge)](https://github.com/Eudaeon/connection-mapper/network)
-[![GitHub issues](https://img.shields.io/github/issues/Eudaeon/connection-mapper?style=for-the-badge)](https://github.com/Eudaeon/connection-mapper/issues)
-[![GitHub license](https://img.shields.io/github/license/Eudaeon/connection-mapper?style=for-the-badge)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/Eudaeon/pwnlogger?style=for-the-badge)](https://github.com/Eudaeon/pwnlogger/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Eudaeon/pwnlogger?style=for-the-badge)](https://github.com/Eudaeon/pwnlogger/network)
+[![GitHub issues](https://img.shields.io/github/issues/Eudaeon/pwnlogger?style=for-the-badge)](https://github.com/Eudaeon/pwnlogger/issues)
+[![GitHub license](https://img.shields.io/github/license/Eudaeon/pwnlogger?style=for-the-badge)](LICENSE)
 
 **A lightweight logging utility built on `rich`.**
 

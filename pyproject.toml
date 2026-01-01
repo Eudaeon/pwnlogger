@@ -2,6 +2,9 @@
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+include = ["pwnlogger*"]
+
 [project]
 name = "pwnlogger"
 version = "0.1.0"
@@ -11,10 +14,10 @@ requires-python = ">=3.8.0"
 dependencies = [
     "rich>=14.2.0",
 ]
-license = {text = "MIT"}
 authors = [
     {name = "Eudaeon"}
 ]
+license = "MIT"
 keywords = ["logging", "debug"]
 
 [project.urls]

@@ -8,7 +8,7 @@ include = ["pwnlogger*"]
 [project]
 name = "pwnlogger"
 version = "0.1.0"
-description = "A lightweight logging utility for debugging"
+description = "A lightweight logging utility built on `rich`."
 readme = "README.md"
 requires-python = ">=3.8.0"
 dependencies = [

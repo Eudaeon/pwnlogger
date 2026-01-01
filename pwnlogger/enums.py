@@ -6,5 +6,6 @@ class LogLevel(IntEnum):
 
     DEBUG = 10
     INFO = 20
-    ERROR = 30
-    SUCCESS = 40
+    WARN = 30
+    ERROR = 40
+    SUCCESS = 50

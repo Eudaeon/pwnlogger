@@ -53,6 +53,9 @@ class _Status:
     def info(self, m):
         self._sub_log(LogLevel.INFO, m)
 
+    def warn(self, m):
+        self._sub_log(LogLevel.WARN, m)
+
     def success(self, m):
         self._sub_log(LogLevel.SUCCESS, m)
 

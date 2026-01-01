@@ -10,6 +10,7 @@ class _PwnLogger:
     STYLES = {
         LogLevel.SUCCESS: "bold green",
         LogLevel.ERROR: "bold red",
+        LogLevel.WARN: "bold yellow",
         LogLevel.INFO: "bold blue",
         LogLevel.DEBUG: "dim",
     }
@@ -38,6 +39,9 @@ class _PwnLogger:
 
     def info(self, message: str) -> None:
         self._print(LogLevel.INFO, message)
+
+    def warn(self, message: str) -> None:
+        self._print(LogLevel.WARN, message)
 
     def debug(self, message: str) -> None:
         self._print(LogLevel.DEBUG, message)

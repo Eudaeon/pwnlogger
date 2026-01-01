@@ -127,6 +127,9 @@ class _Progress:
     def success(self, m):
         self._sub_log(LogLevel.SUCCESS, m)
 
+    def warn(self, m):
+        self._sub_log(LogLevel.WARN, m)
+
     def error(self, m):
         self._sub_log(LogLevel.ERROR, m)
 

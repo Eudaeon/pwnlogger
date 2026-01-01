@@ -41,10 +41,14 @@ logger.error("Connection failed: timeout")
 logger.warn("Configuration deprecated: using fallback")
 
 # This will be hidden because the level is set to INFO
-logger.debug("Stack trace: 0xDEADBEEF") 
+logger.debug("Stack trace: 0xDEADBEEF")
 ```
 
+<div align="center">
+
 ![Basic Logging](img/basic-logging.png)
+
+</div>
 
 ### Status Spinner
 
@@ -73,7 +77,11 @@ with logger.status("Provisioning resources...", level=LogLevel.INFO) as s:
     s.finish("Service deployed successfully", level=LogLevel.SUCCESS)
 ```
 
+<div align="center">
+
 ![Status Spinner](img/status-spinner.png)
+
+</div>
 
 ### Progress Bar
 
@@ -106,7 +114,11 @@ with logger.progress("Initializing system...", total=len(tasks)) as p:
     p.finish("System operational.", level=LogLevel.SUCCESS)
 ```
 
+<div align="center">
+
 ![Progress Bar](img/progress-bar.png)
+
+</div>
 
 ## ⚙️ Configuration
 

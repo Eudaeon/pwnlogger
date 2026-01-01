@@ -116,13 +116,13 @@ PwnLogger uses the `LogLevel` enum to control output.
 
 <div align="center">
 
-| Level | Value | Style |
-| --- | --- | --- |
-| `DEBUG` | 10 | Dim |
-| `INFO` | 20 | Bold Blue |
-| `WARN` | 30 | Bold Yellow |
-| `ERROR` | 40 | Bold Red |
-| `SUCCESS` | 50 | Bold Green |
+|   Level   | Value |    Style    |
+|:---------:|:-----:|:-----------:|
+|  `DEBUG`  |   10  |     Dim     |
+|   `INFO`  |   20  |  Bold Blue  |
+|   `WARN`  |   30  | Bold Yellow |
+|  `ERROR`  |   40  |   Bold Red  |
+| `SUCCESS` |   50  |  Bold Green |
 
 </div>
 

@@ -36,7 +36,7 @@ class _PwnLogger:
     def _print(self, level: LogLevel, message: str) -> None:
         """Prints styled messages to the appropriate stream."""
         if self._should_log(level):
-            style = self.STYLES.get(level, "")
+            style = self.STYLES[level]
             if level == LogLevel.ERROR:
                 self.error_console.print(message, style=style)
             else:

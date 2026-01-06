@@ -15,14 +15,16 @@ from .enums import LogLevel
 class _Progress:
     """Handles persistent progress bars."""
 
-    def __init__(self, logger, message: str, total: int, level: LogLevel):
+    def __init__(
+        self, logger, message: str, total: int, level: LogLevel = LogLevel.INFO
+    ):
         self.logger = logger
         self.level = level
         self.visible = self.logger._should_log(self.level)
         self.message = message
         self.total = total
 
-        style = self.logger.STYLES.get(self.level, "bold blue")
+        style = self.logger.STYLES[self.level]
         self.local_theme = Theme(
             {"progress.remaining": style, "progress.percentage": style}
         )
@@ -97,7 +99,7 @@ class _Progress:
 
         f_message = message if message is not None else self.message
         f_level = level if level else self.level
-        style = self.logger.STYLES.get(f_level, "")
+        style = self.logger.STYLES[f_level]
 
         for column in self.progress_display.columns:
             if isinstance(column, BarColumn):
@@ -143,7 +145,7 @@ class _Progress:
     def _sub_log(self, level: LogLevel, message: str) -> None:
         """Prints a log line above the active progress bar."""
         if self.logger._should_log(level):
-            style = self.logger.STYLES.get(level, "")
+            style = self.logger.STYLES[level]
             self.progress_display.console.print(f"  {message}", style=style)
 
     def info(self, m: str) -> None:

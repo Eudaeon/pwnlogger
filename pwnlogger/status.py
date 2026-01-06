@@ -6,13 +6,13 @@ from .enums import LogLevel
 class _Status:
     """Handles single-line animated indicators."""
 
-    def __init__(self, logger, message: str, level: LogLevel):
+    def __init__(self, logger, message: str, level: LogLevel = LogLevel.INFO):
         self.logger = logger
         self.message = message
         self.level = level
         self.visible = self.logger._should_log(self.level)
 
-        style = self.logger.STYLES.get(self.level, "bold blue")
+        style = self.logger.STYLES[self.level]
 
         self.progress_display = Progress(
             SpinnerColumn(style=style),
@@ -49,7 +49,7 @@ class _Status:
     def _sub_log(self, level: LogLevel, message: str) -> None:
         """Prints a log line above the active spinner."""
         if self.logger._should_log(level):
-            style = self.logger.STYLES.get(level, "")
+            style = self.logger.STYLES[level]
             self.progress_display.console.print(f"  {message}", style=style)
 
     def info(self, m: str) -> None:
@@ -87,7 +87,7 @@ class _Status:
 
         f_message = message if message is not None else self.message
         f_level = level if level else self.level
-        style = self.logger.STYLES.get(f_level, "")
+        style = self.logger.STYLES[f_level]
 
         self.progress_display.stop()
         self.task_id = None

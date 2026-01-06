@@ -1,13 +1,14 @@
 from typing import Optional
 from rich.console import Console
-from rich.theme import Theme
 from rich.progress import (
-    Progress,
-    TextColumn,
     BarColumn,
+    Progress,
+    TaskID,
     TaskProgressColumn,
+    TextColumn,
     TimeRemainingColumn,
 )
+from rich.theme import Theme
 from .enums import LogLevel
 
 
@@ -22,12 +23,15 @@ class _Progress:
         self.total = total
 
         style = self.logger.STYLES.get(self.level, "bold blue")
-        local_theme = Theme({"progress.remaining": style, "progress.percentage": style})
+        self.local_theme = Theme(
+            {"progress.remaining": style, "progress.percentage": style}
+        )
 
         local_console = Console(
-            theme=local_theme,
+            theme=self.local_theme,
             highlight=False,
             force_terminal=self.logger.console.is_terminal,
+            file=self.logger.console.file,
         )
 
         self.progress_display = Progress(
@@ -38,9 +42,9 @@ class _Progress:
             console=local_console,
             transient=False,
         )
-        self.task_id = None
+        self.task_id: Optional[TaskID] = None
 
-    def __enter__(self):
+    def __enter__(self) -> "_Progress":
         if self.visible:
             self.progress_display.start()
             self.task_id = self.progress_display.add_task(
@@ -48,7 +52,7 @@ class _Progress:
             )
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> Optional[bool]:
         if not self.visible:
             return False
 
@@ -57,7 +61,7 @@ class _Progress:
                 self.finish("Execution aborted by user", level=LogLevel.ERROR)
                 return True
             elif exc_type is not None:
-                self.finish(exc_val, level=LogLevel.ERROR)
+                self.finish(str(exc_val), level=LogLevel.ERROR)
                 return True
             else:
                 if self.task_id is not None:
@@ -65,6 +69,7 @@ class _Progress:
         finally:
             if self.progress_display.live.is_started:
                 self.progress_display.stop()
+        return None
 
     def update(
         self,
@@ -72,6 +77,7 @@ class _Progress:
         completed: Optional[int] = None,
         description: Optional[str] = None,
     ) -> None:
+        """Updates the progress bar state."""
         if description is not None:
             self.message = description
         if self.visible and self.task_id is not None:
@@ -85,6 +91,7 @@ class _Progress:
     def finish(
         self, message: Optional[str] = None, level: Optional[LogLevel] = None
     ) -> None:
+        """Marks the progress bar as finished and update its style."""
         if not self.visible or self.task_id is None:
             return
 
@@ -101,37 +108,60 @@ class _Progress:
             elif hasattr(column, "style"):
                 column.style = style
 
-        self.progress_display.console.push_theme(
-            Theme({"progress.remaining": style, "progress.percentage": style})
-        )
+        final_theme = Theme({"progress.remaining": style, "progress.percentage": style})
+        self.progress_display.console.push_theme(final_theme)
 
         update_kwargs = {"description": f"[{style}]{f_message}[/]", "refresh": True}
-        if f_level != LogLevel.ERROR:
+
+        if f_level == LogLevel.ERROR:
+            self.progress_display.update(self.task_id, **update_kwargs)
+
+            self.progress_display.live.transient = True
+            if self.progress_display.live.is_started:
+                self.progress_display.stop()
+
+            err_console = Console(
+                theme=final_theme,
+                file=self.logger.error_console.file,
+                force_terminal=self.logger.error_console.is_terminal,
+                highlight=False,
+            )
+
+            renderable = self.progress_display.make_tasks_table(
+                self.progress_display.tasks
+            )
+            err_console.print(renderable)
+        else:
             update_kwargs["completed"] = self.total
+            self.progress_display.update(self.task_id, **update_kwargs)
 
-        self.progress_display.update(self.task_id, **update_kwargs)
-
-        if self.progress_display.live.is_started:
-            self.progress_display.stop()
+            if self.progress_display.live.is_started:
+                self.progress_display.stop()
 
         self.task_id = None
 
-    def _sub_log(self, level: LogLevel, message: str):
+    def _sub_log(self, level: LogLevel, message: str) -> None:
+        """Prints a log line above the active progress bar."""
         if self.logger._should_log(level):
             style = self.logger.STYLES.get(level, "")
             self.progress_display.console.print(f"  {message}", style=style)
 
-    def info(self, m):
+    def info(self, m: str) -> None:
+        """Prints an info line above the active progress bar."""
         self._sub_log(LogLevel.INFO, m)
 
-    def success(self, m):
+    def success(self, m: str) -> None:
+        """Prints a success line above the active progress bar."""
         self._sub_log(LogLevel.SUCCESS, m)
 
-    def warn(self, m):
+    def warn(self, m: str) -> None:
+        """Prints a warning line above the active progress bar."""
         self._sub_log(LogLevel.WARN, m)
 
-    def error(self, m):
+    def error(self, m: str) -> None:
+        """Prints an error line above the active progress bar."""
         self._sub_log(LogLevel.ERROR, m)
 
-    def debug(self, m):
+    def debug(self, m: str) -> None:
+        """Prints a debug line above the active progress bar."""
         self._sub_log(LogLevel.DEBUG, m)

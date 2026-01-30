@@ -35,13 +35,13 @@ from pwnlogger import logger, LogLevel
 # Set the minimum threshold (default is DEBUG)
 logger.set_level(LogLevel.INFO)
 
-logger.success("Build completed in 4.2s")
-logger.info("Connecting to database...")
-logger.error("Connection failed: timeout")
-logger.warn("Configuration deprecated: using fallback")
+logger.info("Initializing exploit chain...")
+logger.success("Target unreachable, switching to backup gateway.")
+logger.warn("Certificate validation disabled (unsound configuration).")
+logger.error("Connection reset by peer.")
 
 # This will be hidden because the level is set to INFO
-logger.debug("Stack trace: 0xDEADBEEF")
+logger.debug("Payload size: 4096 bytes")
 ```
 
 <div align="center">
@@ -52,29 +52,29 @@ logger.debug("Stack trace: 0xDEADBEEF")
 
 ### Status Spinner
 
-Use the `status` manager for asynchronous or long-running tasks where the duration is unknown.
+Use the `status` manager for long-running tasks where the duration is unknown.
 
 ```python
 import time
 from pwnlogger import logger, LogLevel
 
-# Start a spinner with a specific log level (default is INFO)
-with logger.status("Provisioning resources...", level=LogLevel.INFO) as s:
+# Start a spinner (default log level is INFO)
+with logger.status("Establishing secure tunnel...", level=LogLevel.INFO) as s:
     time.sleep(1)
     # Log sub-steps without breaking the spinner animation
-    s.info("Instance 'web-node-01' initialized.")
+    s.info("Handshake complete. Negotiating cipher...")
         
     time.sleep(1)
     # Update the spinner message
-    s.update("Configuring networking...")
+    s.update("Verifying session keys...")
 
-    # Log sub-steps without breaking the spinner animation
-    s.success("Load balancer attached.")
+    # Log success messages inside the status context
+    s.success("Session keys confirmed.")
         
     time.sleep(1)
 
     # Finalize the status with a custom message and level SUCCESS
-    s.finish("Service deployed successfully", level=LogLevel.SUCCESS)
+    s.finish("Tunnel established successfully.", level=LogLevel.SUCCESS)
 ```
 
 <div align="center">
@@ -85,38 +85,79 @@ with logger.status("Provisioning resources...", level=LogLevel.INFO) as s:
 
 ### Progress Bar
 
-Use `progress` for iterative tasks. These bars persist in the console after completion and support nested logging.
+Use `progress` for iterative tasks. These bars persist in the console and support nested logging.
 
 ```python
 import time
 from pwnlogger import logger, LogLevel
 
-tasks = ["Auth", "Database", "Cache", "Frontend"]
+targets = ["192.168.1.10", "192.168.1.15", "192.168.1.22", "192.168.1.30"]
 
-# Start a progress (default log level is INFO)
-with logger.progress("Initializing system...", total=len(tasks)) as p:
-    for i, task in enumerate(tasks):
-        # Update the progress message and completion
-        p.update(advance=1, description=f"Setting up {task}")
+# Start a progress bar (default log level is INFO)
+with logger.progress("Scanning targets...", total=len(targets)) as p:
+    for i, target in enumerate(targets):
+        # Update progress description and advance count
+        p.update(advance=1, description=f"Scanning {target}")
         
-        if task == "Database":
+        if target == "192.168.1.22":
             # Log sub-steps without breaking the progress animation
-            p.debug("Running migrations...")
+            p.warn(f"High latency detected on {target}")
 
-            time.sleep(0.8)
+            time.sleep(0.5)
 
-            # Log sub-steps without breaking the progress animation
-            p.info("Migration v1.2 applied.")
+            # Log info messages
+            p.info(f"Port 8080 open on {target}")
         
-        time.sleep(0.4)
+        time.sleep(0.3)
     
-    # Finalize the progress with a custom message and level SUCCESS
-    p.finish("System operational.", level=LogLevel.SUCCESS)
+    # Finalize the progress
+    p.finish("Scan complete. 4 targets analyzed.", level=LogLevel.SUCCESS)
 ```
 
 <div align="center">
 
 ![Progress Bar](img/progress-bar.png)
+
+</div>
+
+### Async Support
+
+`pwnlogger` supports `async with` for both the status spinner and progress bar, allowing you to run animations during asynchronous operations without blocking the event loop.
+
+```python
+import asyncio
+from pwnlogger import logger, LogLevel
+
+async def fetch_data():
+    # The spinner will animate while `await` pauses execution
+    async with logger.status("Fetching payload from C2 server...") as s:
+        # Simulate network latency
+        await asyncio.sleep(1.5)
+        
+        s.info("Received 4 packets.")
+        await asyncio.sleep(0.5)
+        
+        s.finish("Payload downloaded successfully.", level=LogLevel.SUCCESS)
+
+async def scan_ports():
+    ports = [21, 22, 80, 443]
+    async with logger.progress("Scanning ports...", total=len(ports)) as p:
+        for port in ports:
+            await asyncio.sleep(0.3)
+            p.update(advance=1, description=f"Checked port {port}")
+        
+        p.finish("All ports scanned.", level=LogLevel.SUCCESS)
+
+async def main():
+    await fetch_data()
+    await scan_ports()
+
+asyncio.run(main())
+```
+
+<div align="center">
+
+![Async Support](img/async-support.png)
 
 </div>
 
@@ -131,10 +172,10 @@ PwnLogger uses the `LogLevel` enum to control output.
 |   Level   | Value |    Style    |
 |:---------:|:-----:|:-----------:|
 |  `DEBUG`  |   10  |     Dim     |
-|   `INFO`  |   20  |  Bold Blue  |
-|   `WARN`  |   30  | Bold Yellow |
-|  `ERROR`  |   40  |   Bold Red  |
-| `SUCCESS` |   50  |  Bold Green |
+|  `INFO`  |   20  |  Bold Blue  |
+|  `WARN`  |   30  | Bold Yellow |
+| `SUCCESS` |   40  |  Bold Green |
+|  `ERROR`  |   50  |   Bold Red  |
 
 </div>
 

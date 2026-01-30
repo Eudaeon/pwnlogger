@@ -2,8 +2,11 @@
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-include = ["pwnlogger*"]
+[tool.setuptools]
+packages = ["pwnlogger"]
+
+[tool.setuptools.package-dir]
+pwnlogger = "src"
 
 [project]
 name = "pwnlogger"
@@ -17,10 +20,14 @@ dependencies = [
 authors = [
     {name = "Eudaeon"}
 ]
-license = "MIT"
+license = {text = "MIT"}
 keywords = ["logging", "debug"]
 
 [project.urls]
 Homepage = "https://github.com/Eudaeon/pwnlogger"
 "Bug Reports" = "https://github.com/Eudaeon/pwnlogger/issues"
 Source = "https://github.com/Eudaeon/pwnlogger"
+
+[tool.isort]
+profile = "black"
+lines_between_sections = 0

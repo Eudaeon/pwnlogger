@@ -126,33 +126,7 @@ class _Progress(LoggableMixin):
         f_message = message if message is not None else self.message
         f_level = level if level else self.level
 
-        if f_level == LogLevel.ERROR:
-            style = self.logger.styles.get(f_level, "")
-
-            # Override theme to ensure all default columns (percentage, remaining) use the error style
-            self.progress_display.console.push_theme(
-                Theme({"progress.percentage": style, "progress.remaining": style})
-            )
-
-            # Update columns to use error style
-            for column in self.progress_display.columns:
-                if isinstance(column, BarColumn):
-                    column.complete_style = style
-                    column.finished_style = style
-
-            self.progress_display.update(
-                self.task_id,
-                description=f"[{style}]{f_message}[/{style}]",
-                refresh=True,
-            )
-            self.stop()
-            self.task_id = None
-            return
-
-        self.progress_display.update(
-            self.task_id, completed=self.total, refresh=True
-        )
-
+        self.progress_display.live.transient = True
         self.stop()
         self.task_id = None
 

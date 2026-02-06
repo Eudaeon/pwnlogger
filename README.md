@@ -155,12 +155,6 @@ async def main():
 asyncio.run(main())
 ```
 
-<div align="center">
-
-![Async Support](img/async-support.png)
-
-</div>
-
 ## ⚙️ Configuration
 
 ### Log Levels
